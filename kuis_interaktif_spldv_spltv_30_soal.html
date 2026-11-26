@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Interaktif SPLDV & SPLTV (30 Soal)</title>
+    <!-- Memuat Tailwind CSS untuk tata letak responsif dan estetika modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat Google Fonts: Inter & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Konfigurasi MathJax 3 (Menggunakan tex-chtml agar rumus inline tidak turun baris) -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            chtml: {
+                displayAlign: 'center',
+                displayIndent: '0em'
+            },
+            options: {
+                enableMenu: false
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+    <!-- Memuat Tone.js untuk efek suara umpan balik interaktif -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Memuat Canvas Confetti untuk perayaan hasil akhir -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+            overflow-x: hidden;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ============================================================== */
+        /* PERBAIKAN RENDER MATHJAX INLINE AGAR TIDAK MEMBUAT BARIS BARU   */
+        /* ============================================================== */
+        mjx-container {
+            display: inline !important;
+            margin: 0 0.12em !important;
+            vertical-align: baseline !important;
+        }
+        mjx-container[display="true"] {
+            display: block !important;
+            text-align: center !important;
+            margin: 0.85em auto !important;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0.25rem 0;
+        }
+        mjx-container svg {
+            display: inline !important;
+            vertical-align: middle !important;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Header & Indikator Auto-Save -->
+    <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-br from-indigo-600 to-blue-700 text-white p-2.5 rounded-2xl shadow-md font-heading font-bold text-xl">
+                    ∑
+                </div>
+                <div>
+                    <h1 class="text-lg sm:text-xl font-bold text-slate-900 leading-tight">Kuis Interaktif SPLDV & SPLTV</h1>
+                    <div class="flex flex-wrap items-center gap-2 mt-0.5">
+                        <span class="text-xs font-semibold text-indigo-600">30 Soal Pilihan Ganda</span>
+                        <span id="saveIndicator" class="inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            <span>💾</span> Tersimpan Otomatis
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kontrol Suara & Reset -->
+            <div class="flex items-center gap-2">
+                <button onclick="toggleSound()" class="p-2.5 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 transition font-semibold text-xs sm:text-sm flex items-center gap-1.5" title="Aktifkan/Matikan Suara">
+                    <span id="soundIcon">🔊</span>
+                    <span class="hidden sm:inline" id="soundText">Suara</span>
+                </button>
+                <button onclick="openResetModal()" class="p-2.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition font-semibold text-xs sm:text-sm flex items-center gap-1.5" title="Ulangi Kuis dari Awal">
+                    <span>🔄</span>
+                    <span class="hidden sm:inline">Reset Kuis</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Progress Bar Pengerjaan -->
+        <div class="w-full bg-slate-100 h-1.5">
+            <div id="progressBar" class="bg-gradient-to-r from-indigo-600 via-blue-500 to-emerald-500 h-1.5 transition-all duration-500" style="width: 0%;"></div>
+        </div>
+    </header>
+
+    <!-- Konten Utama -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
+
+        <!-- Bar Identitas Peserta & Ringkasan Skor -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg shrink-0">
+                    👤
+                </div>
+                <div class="flex-grow">
+                    <label for="studentName" class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Nama Peserta:</label>
+                    <input type="text" id="studentName" placeholder="Masukkan nama lengkap..." oninput="saveStudentName()" class="w-full md:w-64 font-semibold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500 focus:bg-white transition">
+                </div>
+            </div>
+
+            <!-- Statistik Langsung -->
+            <div class="grid grid-cols-3 gap-2 sm:gap-4 w-full md:w-auto text-center">
+                <div class="bg-slate-50 border border-slate-200 px-3 sm:px-4 py-2 rounded-xl">
+                    <p class="text-[11px] font-bold text-slate-500 uppercase">Dijawab</p>
+                    <p class="font-heading font-bold text-lg text-slate-900"><span id="statAnswered">0</span>/30</p>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 px-3 sm:px-4 py-2 rounded-xl">
+                    <p class="text-[11px] font-bold text-emerald-700 uppercase">Benar</p>
+                    <p class="font-heading font-bold text-lg text-emerald-700" id="statCorrect">0</p>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 px-3 sm:px-4 py-2 rounded-xl">
+                    <p class="text-[11px] font-bold text-indigo-700 uppercase">Skor</p>
+                    <p class="font-heading font-bold text-lg text-indigo-700" id="statScore">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Area Kerja Utama: Soal (Kiri) & Navigasi 30 Nomor (Kanan) -->
+        <div id="quizWorkspace" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- Kolom Kiri: Kartu Soal Aktif -->
+            <div class="lg:col-span-8 bg-white rounded-3xl shadow-md border border-slate-200 p-5 sm:p-8">
+                <div id="questionCard" class="fade-in">
+                    <!-- Konten Soal Dirender oleh JS -->
+                </div>
+
+                <!-- Tombol Navigasi Bawah -->
+                <div class="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between gap-3">
+                    <button id="prevBtn" onclick="navigateQuestion(-1)" class="px-4 sm:px-5 py-3 rounded-xl font-semibold text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2">
+                        <span>←</span>
+                        <span>Sebelumnya</span>
+                    </button>
+
+                    <button id="finishBtn" onclick="showFinalSummary()" class="hidden px-5 sm:px-6 py-3 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-md transition flex items-center gap-2">
+                        <span>📊</span>
+                        <span>Lihat Hasil Akhir</span>
+                    </button>
+
+                    <button id="nextBtn" onclick="navigateQuestion(1)" class="px-4 sm:px-5 py-3 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition flex items-center gap-2">
+                        <span>Selanjutnya</span>
+                        <span>→</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Panel Navigasi Nomor Soal (1-30) -->
+            <aside class="lg:col-span-4 bg-white rounded-3xl shadow-md border border-slate-200 p-5 sticky top-24">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="font-heading font-bold text-base text-slate-900">Navigasi Nomor Soal</h2>
+                    <span class="text-xs text-slate-500">Klik nomor soal</span>
+                </div>
+
+                <!-- Legenda Warna Status -->
+                <div class="grid grid-cols-2 gap-2 text-xs font-medium mb-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-indigo-600 inline-block"></span>
+                        <span class="text-slate-600">Aktif</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-emerald-500 inline-block"></span>
+                        <span class="text-slate-600">Benar</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-rose-500 inline-block"></span>
+                        <span class="text-slate-600">Salah</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-3.5 h-3.5 rounded bg-slate-200 inline-block"></span>
+                        <span class="text-slate-600">Kosong</span>
+                    </div>
+                </div>
+
+                <!-- Sub-bagian I: SPLDV (1-15) -->
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Bagian I: SPLDV (1–15)</p>
+                <div id="navGridSPLDV" class="grid grid-cols-5 gap-2 mb-4"></div>
+
+                <!-- Sub-bagian II: SPLTV (16-30) -->
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">Bagian II: SPLTV (16–30)</p>
+                <div id="navGridSPLTV" class="grid grid-cols-5 gap-2 mb-5"></div>
+
+                <div class="pt-4 border-t border-slate-100">
+                    <button onclick="showFinalSummary()" class="w-full py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition shadow-sm">
+                        Rekap Nilai & Pembahasan Akhir
+                    </button>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Layar Rekap Hasil Akhir -->
+        <section id="finalReportScreen" class="hidden bg-white rounded-3xl shadow-lg border border-slate-200 p-6 sm:p-10 text-center fade-in">
+            <div class="text-5xl sm:text-6xl mb-3" id="reportEmoji">🎓</div>
+            <span class="inline-block bg-indigo-50 text-indigo-700 font-bold text-xs px-3 py-1 rounded-full uppercase mb-2">Rekapitulasi Hasil Kuis</span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mb-1" id="reportTitle">Hasil Evaluasi SPLDV & SPLTV</h2>
+            <p class="text-slate-600 mb-6 text-sm sm:text-base" id="reportSubtitle">Ringkasan pengerjaan 30 soal Sistem Persamaan Linear Dua dan Tiga Variabel.</p>
+
+            <!-- Kartu Nilai Utama -->
+            <div class="max-w-xl mx-auto grid grid-cols-3 gap-3 sm:gap-4 mb-8">
+                <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-4">
+                    <p class="text-xs font-bold text-indigo-700 uppercase">Skor Akhir</p>
+                    <p class="font-heading font-extrabold text-3xl sm:text-4xl text-indigo-700 mt-1" id="finalGrade">0</p>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                    <p class="text-xs font-bold text-emerald-700 uppercase">Benar</p>
+                    <p class="font-heading font-extrabold text-3xl sm:text-4xl text-emerald-600 mt-1"><span id="finalCorrect">0</span><span class="text-base font-semibold">/30</span></p>
+                </div>
+                <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4">
+                    <p class="text-xs font-bold text-rose-700 uppercase">Salah</p>
+                    <p class="font-heading font-extrabold text-3xl sm:text-4xl text-rose-600 mt-1" id="finalWrong">0</p>
+                </div>
+            </div>
+
+            <!-- Rincian Per Materi -->
+            <div class="max-w-2xl mx-auto bg-slate-50 rounded-2xl p-5 border border-slate-200 mb-8 text-left">
+                <h3 class="font-heading font-bold text-base text-slate-800 mb-3 text-center">Rincian Penguasaan Per Topik</h3>
+                <div id="categoryBreakdown" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+            </div>
+
+            <div class="flex flex-wrap justify-center gap-3">
+                <button onclick="backToQuiz()" class="px-6 py-3 rounded-xl font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition">
+                    Kembali ke Soal & Pembahasan
+                </button>
+                <button onclick="openResetModal()" class="px-6 py-3 rounded-xl font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition">
+                    Ulangi Kuis Baru
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal Konfirmasi Reset -->
+    <div id="resetModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 text-center fade-in">
+            <div class="text-4xl mb-3">⚠️</div>
+            <h3 class="font-heading font-bold text-xl text-slate-900 mb-2">Reset Seluruh Jawaban?</h3>
+            <p class="text-sm text-slate-600 mb-6">Semua jawaban yang telah tersimpan di perangkat ini akan dihapus dan kuis akan dimulai ulang dari nomor 1.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="closeResetModal()" class="px-5 py-2.5 rounded-xl font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                    Batal
+                </button>
+                <button onclick="confirmResetQuiz()" class="px-5 py-2.5 rounded-xl font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition">
+                    Ya, Reset Kuis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500 mt-8">
+        <p>Kuis Interaktif Matematika: SPLDV & SPLTV (30 Soal) • Penyimpanan Otomatis Lokal Aktif</p>
+    </footer>
+
+    <!-- ========================================================= -->
+    <!-- LOGIKA JAVASCRIPT: 30 SOAL, PEMBAHASAN & LOCALSTORAGE      -->
+    <!-- ========================================================= -->
+    <script>
+        // --- 1. EFEK SUARA (TONE.JS) ---
+        let soundEnabled = true;
+        let synth = null;
+
+        function initAudio() {
+            if (!synth && typeof Tone !== 'undefined') {
+                synth = new Tone.PolySynth(Tone.Synth).toDestination();
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundIcon').textContent = soundEnabled ? '🔊' : '🔇';
+            document.getElementById('soundText').textContent = soundEnabled ? 'Suara' : 'Mati';
+            if (soundEnabled) playTone('click');
+        }
+
+        function playTone(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                if (Tone.context.state !== 'running') Tone.start();
+                if (type === 'click') synth.triggerAttackRelease('C5', '16n');
+                else if (type === 'correct') synth.triggerAttackRelease(['C5', 'E5', 'G5'], '8n');
+                else if (type === 'wrong') synth.triggerAttackRelease(['E3', 'Eb3'], '8n');
+                else if (type === 'win') {
+                    const now = Tone.now();
+                    synth.triggerAttackRelease('C5', '8n', now);
+                    synth.triggerAttackRelease('E5', '8n', now + 0.12);
+                    synth.triggerAttackRelease('G5', '8n', now + 0.24);
+                    synth.triggerAttackRelease('C6', '4n', now + 0.36);
+                }
+            } catch (e) {}
+        }
+
+        // --- 2. BANK 30 SOAL SPLDV & SPLTV ---
+        const questionsBank = [
+            // BAGIAN I: SPLDV (1 - 15)
+            {
+                id: 1,
+                topic: 'SPLDV',
+                question: 'Diketahui sistem persamaan linear dua variabel: $$\\begin{cases} 2x + y = 11 \\\\ x - y = 1 \\end{cases}$$ Nilai dari $x + 2y$ adalah $\\dots$',
+                options: ['$7$', '$9$', '$10$', '$12$'],
+                answerIndex: 2,
+                explanation: 'Jumlahkan kedua persamaan: $(2x + y) + (x - y) = 11 + 1 \\implies 3x = 12 \\implies x = 4$. Substitusi $x = 4$ ke $x - y = 1 \\implies 4 - y = 1 \\implies y = 3$. Jadi, $x + 2y = 4 + 2(3) = 10$.'
+            },
+            {
+                id: 2,
+                topic: 'SPLDV',
+                question: 'Himpunan penyelesaian dari sistem persamaan $3x + 2y = 16$ dan $2x - y = 6$ adalah $\\{(x, y)\\}$. Nilai dari $x \\cdot y$ adalah $\\dots$',
+                options: ['$8$', '$6$', '$10$', '$12$'],
+                answerIndex: 0,
+                explanation: 'Dari $2x - y = 6 \\implies y = 2x - 6$. Substitusi ke persamaan pertama: $3x + 2(2x - 6) = 16 \\implies 7x - 12 = 16 \\implies 7x = 28 \\implies x = 4$. Maka $y = 2(4) - 6 = 2$. Jadi, $x \\cdot y = 4 \\cdot 2 = 8$.'
+            },
+            {
+                id: 3,
+                topic: 'SPLDV',
+                question: 'Harga $4$ buku tulis dan $3$ pensil adalah $\\text{Rp}19.500,00$, sedangkan harga $2$ buku tulis dan $4$ pensil adalah $\\text{Rp}16.000,00$. Harga sebuah buku tulis adalah $\\dots$',
+                options: ['$\\text{Rp}2.500,00$', '$\\text{Rp}3.500,00$', '$\\text{Rp}4.000,00$', '$\\text{Rp}3.000,00$'],
+                answerIndex: 3,
+                explanation: 'Misalkan buku $= b$ dan pensil $= p$. Eliminasi $p$: kalikan $4b + 3p = 19.500$ dengan $4$ menjadi $16b + 12p = 78.000$, dan kalikan $2b + 4p = 16.000$ dengan $3$ menjadi $6b + 12p = 48.000$. Kurangkan keduanya: $10b = 30.000 \\implies b = 3.000$.'
+            },
+            {
+                id: 4,
+                topic: 'SPLDV',
+                question: 'Diketahui sistem persamaan: $$\\begin{cases} 4x - 3y = 18 \\\\ 3x + 2y = 5 \\end{cases}$$ Nilai dari $2x - y$ adalah $\\dots$',
+                options: ['$6$', '$8$', '$4$', '$10$'],
+                answerIndex: 1,
+                explanation: 'Eliminasi $y$: $(4x - 3y = 18) \\times 2 \\implies 8x - 6y = 36$ dan $(3x + 2y = 5) \\times 3 \\implies 9x + 6y = 15$. Jumlahkan: $17x = 51 \\implies x = 3$. Substitusi: $3(3) + 2y = 5 \\implies y = -2$. Jadi, $2x - y = 2(3) - (-2) = 8$.'
+            },
+            {
+                id: 5,
+                topic: 'SPLDV',
+                question: 'Keliling sebuah persegi panjang adalah $64\\text{ cm}$. Jika selisih panjang dan lebarnya adalah $8\\text{ cm}$, maka luas persegi panjang tersebut adalah $\\dots$',
+                options: ['$220\\text{ cm}^2$', '$240\\text{ cm}^2$', '$256\\text{ cm}^2$', '$260\\text{ cm}^2$'],
+                answerIndex: 1,
+                explanation: '$K = 2(p + l) = 64 \\implies p + l = 32$, dan $p - l = 8$. Jumlahkan: $2p = 40 \\implies p = 20\\text{ cm}$, maka $l = 32 - 20 = 12\\text{ cm}$. Luas $= p \\times l = 20 \\times 12 = 240\\text{ cm}^2$.'
+            },
+            {
+                id: 6,
+                topic: 'SPLDV',
+                question: 'Jika $x$ dan $y$ memenuhi sistem persamaan $\\frac{1}{2}x + \\frac{1}{3}y = 5$ dan $\\frac{1}{3}x - \\frac{1}{2}y = -1$, maka nilai dari $x - y$ adalah $\\dots$',
+                options: ['$-2$', '$2$', '$-1$', '$0$'],
+                answerIndex: 3,
+                explanation: 'Kalikan kedua persamaan dengan $6$: diperoleh $3x + 2y = 30$ dan $2x - 3y = -6$. Eliminasi $y$: $9x + 6y = 90$ dan $4x - 6y = -12$. Jumlahkan: $13x = 78 \\implies x = 6$, sehingga $y = 6$. Jadi, $x - y = 6 - 6 = 0$.'
+            },
+            {
+                id: 7,
+                topic: 'SPLDV',
+                question: 'Di sebuah tempat parkir terdapat $45$ kendaraan yang terdiri atas sepeda motor dan mobil. Jika jumlah seluruh roda kendaraan tersebut adalah $120$ buah, maka banyaknya mobil di tempat parkir tersebut adalah $\\dots$',
+                options: ['$15\\text{ unit}$', '$20\\text{ unit}$', '$25\\text{ unit}$', '$30\\text{ unit}$'],
+                answerIndex: 0,
+                explanation: 'Misalkan motor $= m$ dan mobil $= b$. Maka $m + b = 45$ dan $2m + 4b = 120 \\implies m + 2b = 60$. Kurangkan persamaan kedua dengan pertama: $(m + 2b) - (m + b) = 60 - 45 \\implies b = 15\\text{ unit}$.'
+            },
+            {
+                id: 8,
+                topic: 'SPLDV',
+                question: 'Diketahui sistem persamaan pecahan: $$\\begin{cases} \\dfrac{2}{x} + \\dfrac{3}{y} = 2 \\\\[0.3cm] \\dfrac{4}{x} - \\dfrac{3}{y} = 1 \\end{cases}$$ Nilai dari $x + y$ adalah $\\dots$',
+                options: ['$3$', '$4$', '$5$', '$6$'],
+                answerIndex: 2,
+                explanation: 'Jumlahkan kedua persamaan: $\\frac{6}{x} = 3 \\implies x = 2$. Substitusi $x = 2$: $\\frac{2}{2} + \\frac{3}{y} = 2 \\implies 1 + \\frac{3}{y} = 2 \\implies y = 3$. Jadi, $x + y = 2 + 3 = 5$.'
+            },
+            {
+                id: 9,
+                topic: 'SPLDV',
+                question: 'Lima tahun yang lalu, umur Ayah sama dengan $4$ kali umur Budi. Lima tahun yang akan datang, umur Ayah sama dengan $2$ kali umur Budi ditambah $10$ tahun. Umur Budi sekarang adalah $\\dots$',
+                options: ['$12\\text{ tahun}$', '$18\\text{ tahun}$', '$20\\text{ tahun}$', '$15\\text{ tahun}$'],
+                answerIndex: 3,
+                explanation: 'Persamaan (1): $A - 5 = 4(B - 5) \\implies A - 4B = -15$. Persamaan (2): $A + 5 = 2(B + 5) + 10 \\implies A - 2B = 15$. Kurangkan (2) dengan (1): $2B = 30 \\implies B = 15\\text{ tahun}$.'
+            },
+            {
+                id: 10,
+                topic: 'SPLDV',
+                question: 'Agar sistem persamaan linear: $$\\begin{cases} 2x + 3y = 7 \\\\ 4x + ky = 14 \\end{cases}$$ memiliki tak hingga banyaknya penyelesaian, maka nilai $k$ haruslah $\\dots$',
+                options: ['$3$', '$4$', '$6$', '$8$'],
+                answerIndex: 2,
+                explanation: 'Syarat memiliki tak hingga penyelesaian adalah kedua persamaan sebanding (berimpit): $\\frac{2}{4} = \\frac{3}{k} = \\frac{7}{14} \\implies \\frac{1}{2} = \\frac{3}{k} \\implies k = 6$.'
+            },
+            {
+                id: 11,
+                topic: 'SPLDV',
+                question: 'Jumlah dua bilangan cacah adalah $37$ dan selisih kedua bilangan tersebut adalah $11$. Hasil kali kedua bilangan tersebut adalah $\\dots$',
+                options: ['$298$', '$312$', '$324$', '$336$'],
+                answerIndex: 1,
+                explanation: '$x + y = 37$ dan $x - y = 11$. Jumlahkan: $2x = 48 \\implies x = 24$, maka $y = 37 - 24 = 13$. Hasil kali: $24 \\times 13 = 312$.'
+            },
+            {
+                id: 12,
+                topic: 'SPLDV',
+                question: 'Diketahui garis $ax + by = 13$ dan $bx - ay = 0$ berpotongan di titik $(3, 2)$. Nilai dari $a + b$ adalah $\\dots$',
+                options: ['$5$', '$4$', '$6$', '$7$'],
+                answerIndex: 0,
+                explanation: 'Substitusikan $(3, 2)$: $3a + 2b = 13$ dan $3b - 2a = 0 \\implies 2a = 3b$. Maka $a = 3$ dan $b = 2$ memenuhi $3(3) + 2(2) = 13$. Jadi, $a + b = 3 + 2 = 5$.'
+            },
+            {
+                id: 13,
+                topic: 'SPLDV',
+                question: 'Paket A berisi $5$ pulpen dan $2$ penghapus seharga $\\text{Rp}19.000,00$. Paket B berisi $3$ pulpen dan $4$ penghapus seharga $\\text{Rp}17.000,00$. Jika Rani membeli $2$ pulpen dan $2$ penghapus, ia harus membayar sebesar $\\dots$',
+                options: ['$\\text{Rp}10.000,00$', '$\\text{Rp}9.500,00$', '$\\text{Rp}10.500,00$', '$\\text{Rp}11.000,00$'],
+                answerIndex: 0,
+                explanation: 'Eliminasi penghapus: $(5p + 2h = 19.000) \\times 2 \\implies 10p + 4h = 38.000$. Kurangkan dengan $3p + 4h = 17.000 \\implies 7p = 21.000 \\implies p = 3.000$, sehingga $h = 2.000$. Jadi, $2p + 2h = 2(3.000) + 2(2.000) = \\text{Rp}10.000,00$.'
+            },
+            {
+                id: 14,
+                topic: 'SPLDV',
+                question: 'Diketahui sistem persamaan: $$\\begin{cases} 5x + 4y = 22 \\\\ 3x - 2y = 0 \\end{cases}$$ Nilai dari $4x - y$ adalah $\\dots$',
+                options: ['$4$', '$5$', '$6$', '$7$'],
+                answerIndex: 1,
+                explanation: 'Dari $3x - 2y = 0 \\implies 2y = 3x \\implies 4y = 6x$. Substitusi ke persamaan pertama: $5x + 6x = 22 \\implies 11x = 22 \\implies x = 2$, maka $y = 3$. Jadi, $4x - y = 4(2) - 3 = 5$.'
+            },
+            {
+                id: 15,
+                topic: 'SPLDV',
+                question: 'Suatu bilangan terdiri atas dua angka. Jumlah kedua angka penyusunnya adalah $11$. Jika posisi kedua angka tersebut ditukar, diperoleh bilangan baru yang nilainya $27$ lebih besar dari bilangan semula. Bilangan semula adalah $\\dots$',
+                options: ['$29$', '$38$', '$47$', '$56$'],
+                answerIndex: 2,
+                explanation: 'Misalkan bilangan $= 10a + b$ dengan $a + b = 11$. Bilangan baru: $10b + a = 10a + b + 27 \\implies 9b - 9a = 27 \\implies b - a = 3$. Eliminasi diperoleh $b = 7$ dan $a = 4$, sehingga bilangan semula adalah $47$.'
+            },
+
+            // BAGIAN II: SPLTV (16 - 30)
+            {
+                id: 16,
+                topic: 'SPLTV',
+                question: 'Diketahui sistem persamaan linear tiga variabel: $$\\begin{cases} x + y + z = 6 \\\\ 2x - y + z = 3 \\\\ x + 2y - z = 2 \\end{cases}$$ Nilai dari $x \\cdot y \\cdot z$ adalah $\\dots$',
+                options: ['$3$', '$4$', '$5$', '$6$'],
+                answerIndex: 3,
+                explanation: 'Jumlahkan (1) dan (3): $2x + 3y = 8$. Jumlahkan (2) dan (3): $3x + y = 5 \\implies y = 5 - 3x$. Substitusi: $2x + 3(5 - 3x) = 8 \\implies 15 - 7x = 8 \\implies x = 1$. Maka $y = 2$ dan $z = 3$. Jadi, $x \\cdot y \\cdot z = 1 \\cdot 2 \\cdot 3 = 6$.'
+            },
+            {
+                id: 17,
+                topic: 'SPLTV',
+                question: 'Diberikan sistem persamaan: $$\\begin{cases} x + y = 7 \\\\ y + z = 9 \\\\ x + z = 8 \\end{cases}$$ Nilai dari $x + y + z$ adalah $\\dots$',
+                options: ['$10$', '$11$', '$12$', '$14$'],
+                answerIndex: 2,
+                explanation: 'Jumlahkan ketiga persamaan: $(x + y) + (y + z) + (x + z) = 7 + 9 + 8 \\implies 2(x + y + z) = 24 \\implies x + y + z = 12$.'
+            },
+            {
+                id: 18,
+                topic: 'SPLTV',
+                question: 'Harga $2\\text{ kg}$ apel, $1\\text{ kg}$ jeruk, dan $1\\text{ kg}$ mangga adalah $\\text{Rp}65.000,00$. Harga $1\\text{ kg}$ apel, $2\\text{ kg}$ jeruk, dan $1\\text{ kg}$ mangga adalah $\\text{Rp}60.000,00$. Sedangkan harga $1\\text{ kg}$ apel, $1\\text{ kg}$ jeruk, dan $2\\text{ kg}$ mangga adalah $\\text{Rp}55.000,00$. Harga $1\\text{ kg}$ apel adalah $\\dots$',
+                options: ['$\\text{Rp}20.000,00$', '$\\text{Rp}15.000,00$', '$\\text{Rp}18.000,00$', '$\\text{Rp}22.000,00$'],
+                answerIndex: 0,
+                explanation: 'Jumlahkan ketiganya: $4(a + j + m) = 180.000 \\implies a + j + m = 45.000$. Kurangkan persamaan pertama ($2a + j + m = 65.000$) dengan ($a + j + m = 45.000$), didapat $a = \\text{Rp}20.000,00$.'
+            },
+            {
+                id: 19,
+                topic: 'SPLTV',
+                question: 'Himpunan penyelesaian dari sistem persamaan: $$\\begin{cases} 3x + y - z = 5 \\\\ x - 2y + 3z = 8 \\\\ 2x + 3y + 2z = 21 \\end{cases}$$ adalah $\\{(x, y, z)\\}$. Nilai dari $x + 2y - z$ adalah $\\dots$',
+                options: ['$1$', '$2$', '$3$', '$4$'],
+                answerIndex: 3,
+                explanation: 'Dengan eliminasi-substitusi diperoleh $(x, y, z) = (2, 3, 4)$: cek $3(2)+3-4=5$, $2-2(3)+3(4)=8$, dan $2(2)+3(3)+2(4)=21$. Maka $x + 2y - z = 2 + 2(3) - 4 = 4$.'
+            },
+            {
+                id: 20,
+                topic: 'SPLTV',
+                question: 'Tiga bilangan $a$, $b$, dan $c$ memenuhi hubungan $a : b = 2 : 3$ dan $b : c = 4 : 5$. Jika jumlah ketiga bilangan tersebut adalah $70$, maka nilai dari $c - a$ adalah $\\dots$',
+                options: ['$12$', '$14$', '$16$', '$18$'],
+                answerIndex: 1,
+                explanation: 'Samakan perbandingan $b$: $a : b : c = 8 : 12 : 15$. Total bagian $= 8 + 12 + 15 = 35$. Karena $a + b + c = 70$, tiap $1$ bagian bernilai $\\frac{70}{35} = 2$. Jadi, $c - a = (15 - 8) \\times 2 = 14$.'
+            },
+            {
+                id: 21,
+                topic: 'SPLTV',
+                question: 'Diketahui sistem persamaan: $$\\begin{cases} 2x + 3y - z = 10 \\\\ x - y + 2z = 5 \\\\ 3x + y + z = 13 \\end{cases}$$ Nilai dari $z$ adalah $\\dots$',
+                options: ['$1$', '$2$', '$3$', '$4$'],
+                answerIndex: 1,
+                explanation: 'Jumlahkan persamaan (1) dan (3): $5x + 4y = 23$. Kalikan (3) dengan $2$ lalu kurangkan dengan (2): $(6x + 2y + 2z) - (x - y + 2z) = 26 - 5 \\implies 5x + 3y = 21$. Kurangkan keduanya: $y = 2$, maka $x = 3$, dan $z = 13 - 3(3) - 2 = 2$.'
+            },
+            {
+                id: 22,
+                topic: 'SPLTV',
+                question: 'Ani, Bela, dan Cici bekerja bersama-sama menyelesaikan sebuah proyek dalam waktu $4$ hari. Jika Ani dan Bela bekerja berdua, proyek selesai dalam $6$ hari. Jika Bela dan Cici bekerja berdua, proyek selesai dalam $8$ hari. Waktu yang dibutuhkan Cici jika bekerja seorang diri adalah $\\dots$',
+                options: ['$8\\text{ hari}$', '$10\\text{ hari}$', '$12\\text{ hari}$', '$16\\text{ hari}$'],
+                answerIndex: 2,
+                explanation: 'Kecepatan kerja: $a + b + c = \\frac{1}{4}$ dan $a + b = \\frac{1}{6}$. Substitusi: $\\frac{1}{6} + c = \\frac{1}{4} \\implies c = \\frac{1}{4} - \\frac{1}{6} = \\frac{3 - 2}{12} = \\frac{1}{12}$. Jadi waktu Cici sendiri adalah $12\\text{ hari}$.'
+            },
+            {
+                id: 23,
+                topic: 'SPLTV',
+                question: 'Diketahui sistem persamaan pecahan tiga variabel: $$\\begin{cases} \\dfrac{1}{x} + \\dfrac{1}{y} = 5 \\\\[0.3cm] \\dfrac{1}{y} + \\dfrac{1}{z} = 7 \\\\[0.3cm] \\dfrac{1}{x} + \\dfrac{1}{z} = 6 \\end{cases}$$ Nilai dari $\\dfrac{1}{x} + \\dfrac{1}{y} + \\dfrac{1}{z}$ adalah $\\dots$',
+                options: ['$9$', '$8$', '$10$', '$18$'],
+                answerIndex: 0,
+                explanation: 'Jumlahkan ketiga persamaan: $2\\left(\\frac{1}{x} + \\frac{1}{y} + \\frac{1}{z}\\right) = 5 + 7 + 6 = 18 \\implies \\frac{1}{x} + \\frac{1}{y} + \\frac{1}{z} = 9$.'
+            },
+            {
+                id: 24,
+                topic: 'SPLTV',
+                question: 'Jumlah umur Adi, Bayu, dan Candra adalah $48$ tahun. Umur Adi $2$ tahun lebih tua dari umur Bayu, sedangkan umur Bayu $2$ tahun lebih tua dari umur Candra. Umur Candra adalah $\\dots$',
+                options: ['$18\\text{ tahun}$', '$16\\text{ tahun}$', '$15\\text{ tahun}$', '$14\\text{ tahun}$'],
+                answerIndex: 3,
+                explanation: '$B = C + 2$ dan $A = B + 2 = C + 4$. Substitusi ke $A + B + C = 48$: $(C + 4) + (C + 2) + C = 48 \\implies 3C + 6 = 48 \\implies 3C = 42 \\implies C = 14\\text{ tahun}$.'
+            },
+            {
+                id: 25,
+                topic: 'SPLTV',
+                question: 'Suatu bilangan terdiri atas tiga angka yang berjumlah $15$. Angka puluhan sama dengan setengah dari jumlah angka ratusan dan satuan. Jika angka ratusan dan satuan ditukar, bilangan baru nilainya $396$ lebih kecil dari bilangan semula. Angka satuan bilangan tersebut adalah $\\dots$',
+                options: ['$7$', '$5$', '$4$', '$3$'],
+                answerIndex: 3,
+                explanation: '$r + p + s = 15$ dan $r + s = 2p \\implies 3p = 15 \\implies p = 5$, sehingga $r + s = 10$. Selisih tukar posisi: $99(r - s) = 396 \\implies r - s = 4$. Dari $r + s = 10$ dan $r - s = 4$, diperoleh $r = 7$ dan $s = 3$.'
+            },
+            {
+                id: 26,
+                topic: 'SPLTV',
+                question: 'Diketahui sistem persamaan: $$\\begin{cases} x + 2y + 3z = 14 \\\\ 3x + y + 2z = 11 \\\\ 2x + 3y + z = 11 \\end{cases}$$ Nilai dari $x^2 + y^2 + z^2$ adalah $\\dots$',
+                options: ['$14$', '$12$', '$10$', '$9$'],
+                answerIndex: 0,
+                explanation: 'Jumlahkan ketiganya: $6(x + y + z) = 36 \\implies x + y + z = 6$. Dengan eliminasi bertahap diperoleh $x = 1, y = 2, z = 3$. Jadi, $x^2 + y^2 + z^2 = 1^2 + 2^2 + 3^2 = 14$.'
+            },
+            {
+                id: 27,
+                topic: 'SPLTV',
+                question: 'Sebuah kios fotokopi memiliki tiga mesin cetak: mesin $A$, $B$, dan $C$. Jika ketiga mesin bekerja bersama, dalam $1$ jam dapat mencetak $220$ lembar. Jika hanya mesin $A$ dan $B$ yang bekerja, tercetak $140$ lembar. Jika hanya mesin $B$ dan $C$ yang bekerja, tercetak $150$ lembar. Banyak lembar yang dicetak mesin $B$ dalam $1$ jam adalah $\\dots$',
+                options: ['$60\\text{ lembar}$', '$65\\text{ lembar}$', '$70\\text{ lembar}$', '$80\\text{ lembar}$'],
+                answerIndex: 2,
+                explanation: '$A + B + C = 220$ dan $A + B = 140 \\implies 140 + C = 220 \\implies C = 80$. Karena $B + C = 150$, maka $B = 150 - 80 = 70\\text{ lembar}$.'
+            },
+            {
+                id: 28,
+                topic: 'SPLTV',
+                question: 'Diketahui persamaan parabola $y = ax^2 + bx + c$ melalui titik $(0, 3)$, $(1, 6)$, dan $(-1, 4)$. Nilai dari $a + b + c$ adalah $\\dots$',
+                options: ['$5$', '$6$', '$7$', '$8$'],
+                answerIndex: 1,
+                explanation: 'Substitusikan titik $(1, 6)$ ke persamaan $y = ax^2 + bx + c$: $6 = a(1)^2 + b(1) + c \\implies a + b + c = 6$.'
+            },
+            {
+                id: 29,
+                topic: 'SPLTV',
+                question: 'Diberikan sistem persamaan linear tiga variabel: $$\\begin{cases} 4x - y + 2z = 13 \\\\ 2x + 3y - z = 4 \\\\ x + y + z = 6 \\end{cases}$$ Nilai dari $3x - 2y + z$ adalah $\\dots$',
+                options: ['$5$', '$6$', '$7$', '$8$'],
+                answerIndex: 2,
+                explanation: 'Dari (3): $z = 6 - x - y$. Substitusi ke (1) dan (2) menghasilkan $2x - 3y = 1$ dan $3x + 4y = 10$, sehingga diperoleh $x = 2, y = 1, z = 3$. Jadi, $3x - 2y + z = 3(2) - 2(1) + 3 = 7$.'
+            },
+            {
+                id: 30,
+                topic: 'SPLTV',
+                question: 'Dalam sebuah kotak terdapat $30$ bola berwarna merah, kuning, dan hijau. Banyaknya bola merah adalah dua kali banyaknya bola hijau. Jika banyaknya bola kuning dikurangi banyaknya bola hijau sama dengan $2$ bola, maka banyaknya bola merah di dalam kotak tersebut adalah $\\dots$',
+                options: ['$14\\text{ bola}$', '$12\\text{ bola}$', '$10\\text{ bola}$', '$7\\text{ bola}$'],
+                answerIndex: 0,
+                explanation: '$m + k + h = 30$, $m = 2h$, dan $k = h + 2$. Substitusi: $2h + (h + 2) + h = 30 \\implies 4h + 2 = 30 \\implies 4h = 28 \\implies h = 7$. Maka $m = 2(7) = 14\\text{ bola}$.'
+            }
+        ];
+
+        // --- 3. PENYIMPANAN OTOMATIS (LOCALSTORAGE) ---
+        const STORAGE_KEY = 'kuis_spldv_spltv_30_v1';
+
+        let quizState = {
+            studentName: '',
+            currentIdx: 0,
+            userAnswers: new Array(questionsBank.length).fill(null)
+        };
+
+        function loadStateFromStorage() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && Array.isArray(parsed.userAnswers) && parsed.userAnswers.length === questionsBank.length) {
+                        quizState = parsed;
+                    }
+                }
+            } catch (e) {
+                console.warn('Gagal membaca localStorage:', e);
+            }
+            document.getElementById('studentName').value = quizState.studentName || '';
+        }
+
+        function saveStateToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(quizState));
+                const indicator = document.getElementById('saveIndicator');
+                indicator.innerHTML = '<span>✅</span> Tersimpan!';
+                setTimeout(() => {
+                    indicator.innerHTML = '<span>💾</span> Tersimpan Otomatis';
+                }, 1200);
+            } catch (e) {
+                console.warn('Gagal menyimpan ke localStorage:', e);
+            }
+        }
+
+        function saveStudentName() {
+            quizState.studentName = document.getElementById('studentName').value;
+            saveStateToStorage();
+        }
+
+        // --- 4. RENDER SOAL & UMPAN BALIK LANGSUNG ---
+        const optionLetters = ['A', 'B', 'C', 'D'];
+
+        function renderMathTypeset() {
+            if (window.MathJax) {
+                if (typeof MathJax.typesetPromise === 'function') {
+                    MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
+                } else if (MathJax.startup && MathJax.startup.promise) {
+                    MathJax.startup.promise.then(() => MathJax.typesetPromise());
+                }
+            }
+        }
+
+        function renderCurrentQuestion() {
+            const idx = quizState.currentIdx;
+            const q = questionsBank[idx];
+            const userChoice = quizState.userAnswers[idx];
+            const isAnswered = userChoice !== null;
+            const isCorrect = isAnswered && (userChoice === q.answerIndex);
+
+            const card = document.getElementById('questionCard');
+            card.classList.remove('fade-in');
+            void card.offsetWidth;
+            card.classList.add('fade-in');
+
+            const topicBadgeColor = q.topic === 'SPLDV'
+                ? 'bg-blue-50 text-blue-700 border-blue-200'
+                : 'bg-purple-50 text-purple-700 border-purple-200';
+
+            // Render tombol opsi A, B, C, D
+            const optionsHtml = q.options.map((optText, optIdx) => {
+                let btnStyle = 'bg-white hover:bg-indigo-50/60 border-2 border-slate-200 hover:border-indigo-400 text-slate-800';
+                let badgeStyle = 'bg-slate-100 text-slate-700';
+                let statusIcon = '';
+
+                if (isAnswered) {
+                    if (optIdx === q.answerIndex) {
+                        btnStyle = 'bg-emerald-50 border-2 border-emerald-500 text-emerald-950 shadow-sm';
+                        badgeStyle = 'bg-emerald-600 text-white';
+                        statusIcon = '<span class="text-lg">✅</span>';
+                    } else if (optIdx === userChoice && userChoice !== q.answerIndex) {
+                        btnStyle = 'bg-rose-50 border-2 border-rose-500 text-rose-950';
+                        badgeStyle = 'bg-rose-600 text-white';
+                        statusIcon = '<span class="text-lg">❌</span>';
+                    } else {
+                        btnStyle = 'bg-slate-50 border-2 border-slate-200 text-slate-400 opacity-70';
+                        badgeStyle = 'bg-slate-200 text-slate-500';
+                    }
+                }
+
+                return `
+                    <button 
+                        onclick="selectOption(${optIdx})" 
+                        ${isAnswered ? 'disabled' : ''}
+                        class="w-full text-left p-3.5 sm:p-4 rounded-2xl transition flex items-center justify-between gap-3 ${btnStyle} ${!isAnswered ? 'cursor-pointer active:scale-[0.99]' : 'cursor-default'}">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl font-heading font-bold text-sm sm:text-base flex items-center justify-center shrink-0 ${badgeStyle}">
+                                ${optionLetters[optIdx]}
+                            </span>
+                            <span class="font-medium text-base sm:text-lg">${optText}</span>
+                        </div>
+                        ${statusIcon}
+                    </button>
+                `;
+            }).join('');
+
+            // Render umpan balik benar/salah langsung + pembahasan
+            let feedbackHtml = '';
+            if (isAnswered) {
+                if (isCorrect) {
+                    feedbackHtml = `
+                        <div class="mt-6 bg-emerald-50 border border-emerald-300 rounded-2xl p-4 sm:p-5 text-emerald-950 fade-in">
+                            <div class="flex items-center gap-2 font-heading font-bold text-base sm:text-lg text-emerald-800 mb-1.5">
+                                <span>✅</span>
+                                <span>Jawaban Benar!</span>
+                            </div>
+                            <div class="text-sm sm:text-base text-emerald-900 leading-relaxed">
+                                <strong>Pembahasan:</strong> ${q.explanation}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    feedbackHtml = `
+                        <div class="mt-6 bg-rose-50 border border-rose-300 rounded-2xl p-4 sm:p-5 text-rose-950 fade-in">
+                            <div class="flex items-center gap-2 font-heading font-bold text-base sm:text-lg text-rose-800 mb-1.5">
+                                <span>❌</span>
+                                <span>Jawaban Salah! Kunci jawaban: ${optionLetters[q.answerIndex]} (${q.options[q.answerIndex]})</span>
+                            </div>
+                            <div class="text-sm sm:text-base text-rose-900 leading-relaxed">
+                                <strong>Pembahasan:</strong> ${q.explanation}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            card.innerHTML = `
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-5">
+                    <span class="bg-slate-900 text-white font-heading font-bold text-xs sm:text-sm px-3.5 py-1.5 rounded-full">
+                        Soal ${q.id} / ${questionsBank.length}
+                    </span>
+                    <span class="border text-xs font-bold px-3 py-1 rounded-full ${topicBadgeColor}">
+                        Materi: ${q.topic}
+                    </span>
+                </div>
+
+                <div class="text-slate-800 text-base sm:text-lg leading-relaxed mb-6">
+                    ${q.question}
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    ${optionsHtml}
+                </div>
+
+                ${feedbackHtml}
+            `;
+
+            updateNavigationControls();
+            renderNavigationGrids();
+            updateStatsHeader();
+            renderMathTypeset();
+        }
+
+        function selectOption(optIdx) {
+            const idx = quizState.currentIdx;
+            if (quizState.userAnswers[idx] !== null) return;
+
+            quizState.userAnswers[idx] = optIdx;
+            saveStateToStorage();
+
+            const isCorrect = (optIdx === questionsBank[idx].answerIndex);
+            playTone(isCorrect ? 'correct' : 'wrong');
+
+            renderCurrentQuestion();
+        }
+
+        // --- 5. SISTEM NAVIGASI 30 SOAL ---
+        function navigateQuestion(delta) {
+            const nextIdx = quizState.currentIdx + delta;
+            if (nextIdx >= 0 && nextIdx < questionsBank.length) {
+                playTone('click');
+                quizState.currentIdx = nextIdx;
+                saveStateToStorage();
+                renderCurrentQuestion();
+            }
+        }
+
+        function jumpToQuestion(idx) {
+            playTone('click');
+            quizState.currentIdx = idx;
+            saveStateToStorage();
+            document.getElementById('finalReportScreen').classList.add('hidden');
+            document.getElementById('quizWorkspace').classList.remove('hidden');
+            renderCurrentQuestion();
+        }
+
+        function updateNavigationControls() {
+            const idx = quizState.currentIdx;
+            document.getElementById('prevBtn').disabled = (idx === 0);
+
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+
+            if (idx === questionsBank.length - 1) {
+                nextBtn.classList.add('hidden');
+                finishBtn.classList.remove('hidden');
+            } else {
+                nextBtn.classList.remove('hidden');
+                finishBtn.classList.add('hidden');
+            }
+        }
+
+        function renderNavigationGrids() {
+            const gridSPLDV = document.getElementById('navGridSPLDV');
+            const gridSPLTV = document.getElementById('navGridSPLTV');
+
+            let htmlSPLDV = '';
+            let htmlSPLTV = '';
+
+            questionsBank.forEach((q, idx) => {
+                const ans = quizState.userAnswers[idx];
+                const isCurrent = (idx === quizState.currentIdx);
+
+                let btnClass = 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200';
+                if (ans !== null) {
+                    if (ans === q.answerIndex) {
+                        btnClass = 'bg-emerald-500 text-white border border-emerald-600';
+                    } else {
+                        btnClass = 'bg-rose-500 text-white border border-rose-600';
+                    }
+                }
+
+                if (isCurrent) {
+                    btnClass += ' ring-2 ring-offset-2 ring-indigo-600 font-extrabold';
+                }
+
+                const btnHtml = `
+                    <button onclick="jumpToQuestion(${idx})" class="h-9 rounded-xl font-heading font-bold text-xs sm:text-sm transition flex items-center justify-center ${btnClass}">
+                        ${q.id}
+                    </button>
+                `;
+
+                if (idx < 15) htmlSPLDV += btnHtml;
+                else htmlSPLTV += btnHtml;
+            });
+
+            gridSPLDV.innerHTML = htmlSPLDV;
+            gridSPLTV.innerHTML = htmlSPLTV;
+        }
+
+        function updateStatsHeader() {
+            let answeredCount = 0;
+            let correctCount = 0;
+
+            quizState.userAnswers.forEach((ans, idx) => {
+                if (ans !== null) {
+                    answeredCount++;
+                    if (ans === questionsBank[idx].answerIndex) {
+                        correctCount++;
+                    }
+                }
+            });
+
+            const score = Math.round((correctCount / questionsBank.length) * 100);
+            const progressPercent = (answeredCount / questionsBank.length) * 100;
+
+            document.getElementById('statAnswered').textContent = answeredCount;
+            document.getElementById('statCorrect').textContent = correctCount;
+            document.getElementById('statScore').textContent = score;
+            document.getElementById('progressBar').style.width = progressPercent + '%';
+        }
+
+        // --- 6. LAYAR REKAP HASIL AKHIR ---
+        function showFinalSummary() {
+            playTone('win');
+            document.getElementById('quizWorkspace').classList.add('hidden');
+            document.getElementById('finalReportScreen').classList.remove('hidden');
+
+            let correctCount = 0;
+            let wrongCount = 0;
+            const catStats = {
+                'SPLDV': { correct: 0, total: 15, label: 'Bagian I: SPLDV (No. 1–15)' },
+                'SPLTV': { correct: 0, total: 15, label: 'Bagian II: SPLTV (No. 16–30)' }
+            };
+
+            questionsBank.forEach((q, idx) => {
+                const ans = quizState.userAnswers[idx];
+                if (ans !== null) {
+                    if (ans === q.answerIndex) {
+                        correctCount++;
+                        catStats[q.topic].correct++;
+                    } else {
+                        wrongCount++;
+                    }
+                }
+            });
+
+            const finalGrade = Math.round((correctCount / questionsBank.length) * 100);
+            const name = quizState.studentName.trim() || 'Peserta Kuis';
+
+            document.getElementById('finalGrade').textContent = finalGrade;
+            document.getElementById('finalCorrect').textContent = correctCount;
+            document.getElementById('finalWrong').textContent = wrongCount;
+            document.getElementById('reportTitle').textContent = `Hasil Evaluasi: ${name}`;
+
+            if (finalGrade >= 80 && typeof confetti === 'function') {
+                confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+            }
+
+            const breakdownEl = document.getElementById('categoryBreakdown');
+            breakdownEl.innerHTML = Object.keys(catStats).map(key => {
+                const st = catStats[key];
+                const pct = Math.round((st.correct / st.total) * 100);
+                return `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 flex items-center justify-between">
+                        <div>
+                            <p class="font-bold text-sm text-slate-800">${st.label}</p>
+                            <p class="text-xs text-slate-500 mt-0.5">Benar ${st.correct} dari ${st.total} soal</p>
+                        </div>
+                        <span class="font-heading font-bold text-base px-3 py-1 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            ${pct}%
+                        </span>
+                    </div>
+                `;
+            }).join('');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function backToQuiz() {
+            playTone('click');
+            document.getElementById('finalReportScreen').classList.add('hidden');
+            document.getElementById('quizWorkspace').classList.remove('hidden');
+            renderCurrentQuestion();
+        }
+
+        // --- 7. RESET KUIS ---
+        function openResetModal() {
+            playTone('click');
+            document.getElementById('resetModal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            playTone('click');
+            document.getElementById('resetModal').classList.add('hidden');
+        }
+
+        function confirmResetQuiz() {
+            playTone('click');
+            localStorage.removeItem(STORAGE_KEY);
+            quizState = {
+                studentName: document.getElementById('studentName').value || '',
+                currentIdx: 0,
+                userAnswers: new Array(questionsBank.length).fill(null)
+            };
+            saveStateToStorage();
+            closeResetModal();
+            document.getElementById('finalReportScreen').classList.add('hidden');
+            document.getElementById('quizWorkspace').classList.remove('hidden');
+            renderCurrentQuestion();
+        }
+
+        // --- INISIALISASI ---
+        window.onload = function() {
+            loadStateFromStorage();
+            renderCurrentQuestion();
+        };
+    </script>
+</body>
+</html>
